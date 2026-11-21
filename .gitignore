@@ -1,0 +1,9 @@
+backend/.venv/
+backend/storage/
+backend/clipper.db
+backend/.env
+backend/**/__pycache__/
+frontend/node_modules/
+frontend/dist/
+.DS_Store
+
