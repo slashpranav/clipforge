@@ -226,7 +226,7 @@ class ApiClient {
 
   // ---------------- JOBS / PIPELINE ----------------
   async startAnalysis(projectId: string): Promise<{ job_id: string; status: string; stage: string; progress: number; message: string }> {
-    return this.request(`/jobs/projects/${projectId}/analyze`, {
+    return this.request(`/projects/${projectId}/process`, {
       method: 'POST',
     });
   }
@@ -243,7 +243,7 @@ class ApiClient {
 
   // ---------------- HIGHLIGHTS ----------------
   async listHighlights(projectId: string): Promise<Highlight[]> {
-    return this.request<Highlight[]>(`/highlights/project/${projectId}`);
+    return this.request<Highlight[]>(`/projects/${projectId}/highlights`);
   }
 
   async updateHighlight(
@@ -278,11 +278,11 @@ class ApiClient {
   }
 
   async listClips(projectId: string): Promise<Clip[]> {
-    return this.request<Clip[]>(`/clips/project/${projectId}`);
+    return this.request<Clip[]>(`/projects/${projectId}/clips`);
   }
 
   async getClip(clipId: string): Promise<ClipAsset> {
-    return this.request<ClipAsset>(`/clips/${clipId}`);
+    return this.request<ClipAsset>(`/clips/${clipId}/assets`);
   }
 
   getClipDownloadUrl(clipId: string): string {

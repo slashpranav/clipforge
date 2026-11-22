@@ -96,7 +96,7 @@ export default function ProjectStudioPage() {
     let timer: NodeJS.Timeout;
 
     const poll = async () => {
-      if (project?.status === 'analyzing' || (activeJob && (activeJob.status === 'queued' || activeJob.status === 'running'))) {
+      if (project?.status === 'analyzing' || project?.status === 'processing' || (activeJob && (activeJob.status === 'queued' || activeJob.status === 'running'))) {
         try {
           if (activeJob) {
             const updatedJob = await api.getJob(activeJob.id);
@@ -108,7 +108,7 @@ export default function ProjectStudioPage() {
             // Refresh project status
             const proj = await api.getProject(projectId);
             setProject(proj);
-            if (proj.status === 'ready') {
+            if (proj.status === 'ready' || proj.status === 'ready_for_review' || proj.status === 'completed') {
               refreshProjectData();
             }
           }

@@ -18,6 +18,25 @@ class ModelManager:
         with _whisper_lock:
             if _whisper_instance is None:
                 logger.info(f"Lazy loading faster-whisper model: {size} (device={settings.whisper_device}, compute={settings.whisper_compute_type})")
+                try:
+                    import faster_whisper.audio
+                    import soundfile as sf
+                    import numpy as np
+
+                    def _patched_decode_audio(input_file, sampling_rate=16000, split_stereo=False):
+                        if isinstance(input_file, np.ndarray):
+                            return input_file
+                        audio, sr = sf.read(str(input_file), dtype="float32")
+                        if audio.ndim > 1:
+                            if split_stereo:
+                                return audio[:, 0], audio[:, 1]
+                            audio = audio.mean(axis=1)
+                        return audio
+
+                    faster_whisper.audio.decode_audio = _patched_decode_audio
+                except Exception as patch_err:
+                    logger.warning(f"Could not patch faster_whisper decode_audio: {patch_err}")
+
                 from faster_whisper import WhisperModel
                 _whisper_instance = WhisperModel(
                     size,

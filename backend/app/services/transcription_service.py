@@ -22,16 +22,27 @@ class TranscriptionService:
         if not wav_path or not wav_path.exists():
             raise AppError(code="AUDIO_MISSING", message="Audio file not found for transcription.", status_code=404)
 
+        import soundfile as sf
+        try:
+            audio_data, _ = sf.read(str(wav_path), dtype="float32")
+            if audio_data.ndim > 1:
+                audio_data = audio_data.mean(axis=1)
+        except Exception as load_err:
+            logger.warning(f"Could not load WAV via soundfile ({load_err}); falling back to path string.")
+            audio_data = str(wav_path)
+
         model = ModelManager.get_whisper_model(model_size)
         lang_arg = None if language == "auto" else language
 
         logger.info(f"Starting faster-whisper transcription on {wav_path.name} (language={lang_arg})")
         try:
             segments_iter, info = model.transcribe(
-                str(wav_path),
+                audio_data,
                 language=lang_arg,
                 word_timestamps=True,
                 vad_filter=True,
+                temperature=(0.0, 0.2),
+                condition_on_previous_text=False,
             )
 
             detected_lang = info.language or "unknown"

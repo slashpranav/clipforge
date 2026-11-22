@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 from typing import List
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -26,6 +27,22 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 60
 
     storage_root: str = str(BASE_DIR / "storage")
+
+    @field_validator("database_url", mode="after")
+    @classmethod
+    def normalize_db_url(cls, v: str) -> str:
+        if v.startswith("sqlite:///./") or v.startswith("sqlite:///.\\"):
+            rel = v.replace("sqlite:///./", "").replace("sqlite:///.\\", "")
+            return f"sqlite:///{(BASE_DIR / rel).as_posix()}"
+        return v
+
+    @field_validator("storage_root", mode="after")
+    @classmethod
+    def normalize_storage_root(cls, v: str) -> str:
+        p = Path(v)
+        if not p.is_absolute():
+            return str((BASE_DIR / p).resolve())
+        return v
     max_upload_mb: int = 2048
     allowed_video_extensions: str = ".mp4,.mov,.mkv,.webm"
     max_video_duration_seconds: int = 14400

@@ -69,6 +69,7 @@ def get_clip_details(
 
 
 @router.get("/projects/{project_id}/clips", response_model=List[ClipResponse])
+@router.get("/clips/project/{project_id}", response_model=List[ClipResponse])
 def list_project_clips(
     project_id: str,
     db: Annotated[Session, Depends(get_db)],
@@ -83,6 +84,36 @@ def list_project_clips(
 
     clips = db.query(Clip).filter(Clip.project_id == project_id).order_by(Clip.created_at.desc()).all()
     return [ClipService.to_response(c) for c in clips]
+
+
+@router.get("/clips/{clip_id}/subtitles")
+def get_clip_subtitle_file(
+    clip_id: str,
+    format: str = "srt",
+    db: Annotated[Session, Depends(get_db)] = None,
+    current_user: Annotated[User, Depends(get_current_user)] = None,
+):
+    """Serve subtitle track (SRT or VTT) directly for download or video player."""
+    clip = db.query(Clip).filter(Clip.id == clip_id).first()
+    if not clip:
+        raise NotFoundError("Clip", clip_id)
+
+    project = db.query(Project).filter(Project.id == clip.project_id).first()
+    if not project or project.user_id != current_user.id:
+        raise ForbiddenError()
+
+    abs_path = resolve_safe_path(clip.file_path)
+    sub_fmt = "vtt" if format.lower() == "vtt" else "srt"
+    sub_file = abs_path.with_suffix(f".{sub_fmt}")
+    if not sub_file.exists():
+        raise NotFoundError(f"Subtitle file ({sub_fmt})", clip_id)
+
+    media_type = "text/vtt" if sub_fmt == "vtt" else "text/plain"
+    return FileResponse(
+        path=str(sub_file),
+        media_type=media_type,
+        filename=f"subtitles_{clip_id[:8]}.{sub_fmt}",
+    )
 
 
 @router.get("/clips/{clip_id}/download")

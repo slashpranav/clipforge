@@ -15,6 +15,9 @@ router = APIRouter(tags=["Jobs"])
 
 
 @router.post("/projects/{project_id}/process", response_model=JobEnqueueResponse, status_code=202)
+@router.post("/projects/{project_id}/analyze", response_model=JobEnqueueResponse, status_code=202)
+@router.post("/jobs/projects/{project_id}/analyze", response_model=JobEnqueueResponse, status_code=202)
+@router.post("/jobs/projects/{project_id}/process", response_model=JobEnqueueResponse, status_code=202)
 def start_processing_job(
     project_id: str,
     db: Annotated[Session, Depends(get_db)],

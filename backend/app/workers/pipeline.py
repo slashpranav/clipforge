@@ -67,8 +67,8 @@ def run_project_pipeline(job_id: str) -> None:
 
         if extracted_wav:
             sub_settings = settings_dict.get("subtitle", {})
-            lang_hint = sub_settings.get("language", "auto")
-            tr_res = TranscriptionService.transcribe_audio_file(extracted_wav, language=lang_hint)
+            source_lang = "auto" if sub_settings.get("mode") == "translated" else sub_settings.get("language", "auto")
+            tr_res = TranscriptionService.transcribe_audio_file(extracted_wav, language=source_lang)
             TranscriptionService.save_transcript(db, video.id, tr_res)
         else:
             logger.info("Video has no audio; creating empty transcript.")

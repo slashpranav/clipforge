@@ -15,6 +15,7 @@ router = APIRouter(tags=["Highlights"])
 
 
 @router.get("/projects/{project_id}/highlights", response_model=List[HighlightResponse])
+@router.get("/highlights/project/{project_id}", response_model=List[HighlightResponse])
 def list_project_highlights(
     project_id: str,
     db: Annotated[Session, Depends(get_db)],
