@@ -23,16 +23,22 @@ module.exports = {
           950: '#2e1065',
         },
         surface: {
-          DEFAULT: '#0f1117',
-          card: '#161922',
-          cardHover: '#1c202c',
-          border: '#262b3a',
-          muted: '#8e96aa',
-        }
+          DEFAULT: '#090b10',
+          card: '#111520',
+          cardHover: '#161b29',
+          elevated: '#191f2e',
+          border: '#23293a',
+          muted: '#8c95ab',
+        },
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
-      }
+        sans: ['var(--font-sans)', 'Inter', 'system-ui', 'sans-serif'],
+        mono: ['var(--font-mono)', 'JetBrains Mono', 'monospace'],
+      },
+      boxShadow: {
+        studio: '0 10px 35px -10px rgba(0, 0, 0, 0.7)',
+        glow: '0 0 30px -5px rgba(124, 58, 237, 0.35)',
+      },
     },
   },
   plugins: [],
