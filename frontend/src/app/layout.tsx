@@ -34,9 +34,21 @@ export default function RootLayout({
         <AuthProvider>
           <ClickSpark sparkColor="#e11d48" sparkRadius={18} sparkSize={8} sparkCount={8}>
             <Sidebar />
-            <div className="flex-1 flex flex-col min-w-0">
+            <div className="flex-1 flex flex-col min-w-0 relative">
+              {/* Right-Side Workspace Ambient Background (Low Opacity) */}
+              <div
+                aria-hidden="true"
+                className="pointer-events-none select-none fixed inset-y-0 right-0 left-0 md:left-64 z-0 overflow-hidden"
+              >
+                <img
+                  src="/workspace-bg.jpg"
+                  alt=""
+                  className="w-full h-full object-cover object-right opacity-35"
+                />
+              </div>
+
               <Header />
-              <main className="flex-1 p-5 sm:p-6 md:p-8 max-w-7xl w-full mx-auto overflow-y-auto">
+              <main className="relative z-10 flex-1 p-5 sm:p-6 md:p-8 max-w-7xl w-full mx-auto overflow-y-auto">
                 {children}
               </main>
             </div>
