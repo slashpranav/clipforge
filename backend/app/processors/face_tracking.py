@@ -5,10 +5,17 @@ import numpy as np
 
 
 def _load_cascades():
-    cascade_dir = cv2.data.haarcascades
-    frontal = cv2.CascadeClassifier(str(Path(cascade_dir) / "haarcascade_frontalface_default.xml"))
-    profile = cv2.CascadeClassifier(str(Path(cascade_dir) / "haarcascade_profileface.xml"))
-    return frontal, profile
+    if not hasattr(cv2, "CascadeClassifier"):
+        return None, None
+    try:
+        cascade_dir = cv2.data.haarcascades
+        frontal = cv2.CascadeClassifier(str(Path(cascade_dir) / "haarcascade_frontalface_default.xml"))
+        profile = cv2.CascadeClassifier(str(Path(cascade_dir) / "haarcascade_profileface.xml"))
+        if frontal.empty():
+            return None, None
+        return frontal, profile
+    except Exception:
+        return None, None
 
 
 def track_faces_in_interval(
@@ -58,9 +65,11 @@ def track_faces_in_interval(
         gray = cv2.cvtColor(small, cv2.COLOR_BGR2GRAY)
         gray = cv2.equalizeHist(gray)
 
-        faces = frontal.detectMultiScale(gray, scaleFactor=1.2, minNeighbors=4, minSize=(20, 20))
-        if len(faces) == 0 and not profile.empty():
-            faces = profile.detectMultiScale(gray, scaleFactor=1.2, minNeighbors=3, minSize=(20, 20))
+        faces = []
+        if frontal is not None:
+            faces = frontal.detectMultiScale(gray, scaleFactor=1.2, minNeighbors=4, minSize=(20, 20))
+            if len(faces) == 0 and profile is not None and not profile.empty():
+                faces = profile.detectMultiScale(gray, scaleFactor=1.2, minNeighbors=3, minSize=(20, 20))
 
         if len(faces) > 0:
             face_hits += 1
@@ -75,7 +84,19 @@ def track_faces_in_interval(
             avg_cx = sum_cx / max(1.0, total_area)
             points.append({"t": round(rel_t, 2), "cx": round(float(np.clip(avg_cx, 0.15, 0.85)), 3)})
         else:
-            # Fallback to center or previous cx
+            # Visual saliency fallback: center-weighted horizontal edge energy
+            try:
+                grad_x = np.abs(np.diff(gray.astype(np.float32), axis=1))
+                col_energy = grad_x.mean(axis=0)
+                if col_energy.sum() > 0:
+                    xs = np.linspace(0.0, 1.0, len(col_energy))
+                    # Blend edge energy centroid with center bias so framing stays stable
+                    salient_cx = float((xs * col_energy).sum() / col_energy.sum())
+                    blended_cx = 0.4 * salient_cx + 0.6 * 0.5
+                    points.append({"t": round(rel_t, 2), "cx": round(float(np.clip(blended_cx, 0.2, 0.8)), 3)})
+                    continue
+            except Exception:
+                pass
             prev_cx = points[-1]["cx"] if points else 0.5
             points.append({"t": round(rel_t, 2), "cx": prev_cx})
 

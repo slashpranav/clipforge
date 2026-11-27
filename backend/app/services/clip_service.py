@@ -12,6 +12,7 @@ from app.database.models.video import Video
 from app.processors.face_tracking import track_faces_in_interval
 from app.processors.renderer import render_short_clip
 from app.schemas.clip import ClipResponse
+from app.services.cleanup_service import CleanupService
 from app.services.subtitle_service import SubtitleService
 from app.utils.paths import get_storage_root, resolve_safe_path
 
@@ -60,7 +61,20 @@ class ClipService:
             )
 
         storage_root = get_storage_root()
+        settings_dict = json.loads(project.settings_json) if project.settings_json else {}
+        sub_style = settings_dict.get("subtitle", {}).get("style", "clean")
+        sub_lang = settings_dict.get("subtitle", {}).get("language", "auto")
         rendered_clips: List[Clip] = []
+
+        # Remove previous clips for these highlights to avoid duplicates
+        for h in target_highlights:
+            existing_clips = db.query(Clip).filter(Clip.project_id == project_id, Clip.highlight_id == h.id).all()
+            for ec in existing_clips:
+                CleanupService.delete_file_safely(ec.file_path)
+                if ec.thumbnail_path:
+                    CleanupService.delete_file_safely(ec.thumbnail_path)
+                db.delete(ec)
+        db.flush()
 
         for h in target_highlights:
             clip_id = str(uuid.uuid4())
@@ -89,6 +103,7 @@ class ClipService:
                 face_track_info=face_track_info,
                 cues=cues,
                 burn_subtitles=burn_subtitles,
+                subtitle_style=sub_style,
             )
 
             rel_clip_path = clip_dest.relative_to(storage_root).as_posix()
@@ -104,7 +119,7 @@ class ClipService:
                 width=res["width"],
                 height=res["height"],
                 fps=res["fps"],
-                subtitle_language="auto",
+                subtitle_language=sub_lang,
                 status="ready",
             )
             db.add(clip_record)

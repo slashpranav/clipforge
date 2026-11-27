@@ -45,3 +45,27 @@ def test_generate_candidate_highlights_deduplication():
         assert h["end_seconds"] <= 60.0
         assert h["start_seconds"] >= 0.0
         assert h["score"] > 0
+
+
+def test_generate_multi_clips_10_and_15():
+    sentences = [
+        {"start": float(i * 4), "end": float(i * 4 + 3.8), "text": f"Sentence number {i} with interesting fact."}
+        for i in range(20)
+    ]
+    highlights_10 = generate_candidate_highlights(
+        sentences=sentences,
+        source_duration=80.0,
+        target_duration=15.0,
+        number_of_highlights=10,
+    )
+    assert len(highlights_10) == 10
+    assert all(h["selected"] is True for h in highlights_10)
+
+    highlights_15 = generate_candidate_highlights(
+        sentences=sentences,
+        source_duration=120.0,
+        target_duration=15.0,
+        number_of_highlights=15,
+    )
+    assert len(highlights_15) == 15
+    assert all(h["selected"] is True for h in highlights_15)

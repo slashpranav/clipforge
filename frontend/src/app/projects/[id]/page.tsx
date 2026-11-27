@@ -71,15 +71,25 @@ export default function ProjectStudioPage() {
       const proj = await api.getProject(projectId);
       setProject(proj);
 
-      const [vid, hls, cls] = await Promise.allSettled([
+      const [vid, hls, cls, jobsList] = await Promise.allSettled([
         api.getVideo(proj.video_id),
         api.listHighlights(projectId),
         api.listClips(projectId),
+        api.listProjectJobs(projectId),
       ]);
 
       if (vid.status === 'fulfilled') setVideo(vid.value);
       if (hls.status === 'fulfilled') setHighlights(hls.value);
       if (cls.status === 'fulfilled') setClips(cls.value);
+      if (jobsList.status === 'fulfilled' && jobsList.value.length > 0) {
+        const latestJob = jobsList.value[0];
+        setActiveJob(latestJob);
+        if (latestJob.status === 'queued' || latestJob.status === 'running') {
+          setActiveTab('pipeline');
+        } else if (cls.status === 'fulfilled' && cls.value.length > 0 && proj.status === 'completed') {
+          setActiveTab('clips');
+        }
+      }
     } catch (err: any) {
       setNotification({ type: 'error', message: err.message || 'Failed to load project details.' });
     } finally {
@@ -102,14 +112,19 @@ export default function ProjectStudioPage() {
             const updatedJob = await api.getJob(activeJob.id);
             setActiveJob(updatedJob);
             if (updatedJob.status === 'completed' || updatedJob.status === 'failed') {
-              refreshProjectData();
+              await refreshProjectData();
+              if (updatedJob.status === 'completed') {
+                const latestClips = await api.listClips(projectId).catch(() => []);
+                setActiveTab(latestClips.length > 0 ? 'clips' : 'highlights');
+              }
             }
           } else {
             // Refresh project status
             const proj = await api.getProject(projectId);
             setProject(proj);
             if (proj.status === 'ready' || proj.status === 'ready_for_review' || proj.status === 'completed') {
-              refreshProjectData();
+              await refreshProjectData();
+              setActiveTab(proj.status === 'completed' ? 'clips' : 'highlights');
             }
           }
         } catch (e) {
@@ -557,15 +572,16 @@ export default function ProjectStudioPage() {
             </div>
 
             {/* Stages Flow */}
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-2 text-center text-xs">
+            <div className="grid grid-cols-2 md:grid-cols-6 gap-2 text-center text-xs">
               {[
-                { stage: 'EXTRACTING_AUDIO', label: '1. Audio Extract' },
-                { stage: 'TRANSCRIBING', label: '2. Whisper' },
-                { stage: 'DETECTING_SCENES', label: '3. Scene Cuts' },
-                { stage: 'SCORING_HIGHLIGHTS', label: '4. AI Ranking' },
-                { stage: 'READY', label: '5. Ready' },
+                { stage: 'extracting_audio', label: '1. Audio Extract' },
+                { stage: 'transcribing', label: '2. Whisper' },
+                { stage: 'detecting_scenes', label: '3. Scene Cuts' },
+                { stage: 'analyzing_highlights', label: '4. AI Ranking' },
+                { stage: 'rendering_clips', label: '5. Render Clips' },
+                { stage: 'completed', label: '6. Complete' },
               ].map((s) => {
-                const isCurrent = activeJob?.stage === s.stage;
+                const isCurrent = activeJob?.stage?.toLowerCase() === s.stage;
                 return (
                   <div
                     key={s.stage}

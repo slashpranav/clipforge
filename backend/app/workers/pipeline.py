@@ -12,6 +12,7 @@ from app.database.models.video import Video
 from app.database.session import SessionLocal
 from app.processors.audio import calculate_audio_energy, extract_audio_to_wav
 from app.processors.scenes import detect_scene_boundaries
+from app.services.clip_service import ClipService
 from app.services.highlight_service import HighlightService
 from app.services.transcription_service import TranscriptionService
 from app.utils.paths import get_job_work_dir, resolve_safe_path
@@ -99,14 +100,47 @@ def run_project_pipeline(job_id: str) -> None:
             scene_cuts=scene_cuts,
         )
 
-        project.status = "ready_for_review"
-        db.commit()
+        auto_render = settings_dict.get("auto_render_clips", True)
+        if auto_render and highlights:
+            if JobQueue.is_cancelled(job_id):
+                return
+            JobQueue.update_progress(
+                job_id,
+                stage="rendering_clips",
+                progress=90,
+                message=f"Rendering {len(highlights)} vertical 9:16 MP4 multi-clips...",
+            )
+            clips = ClipService.render_clips_for_project(
+                db=db,
+                project_id=project.id,
+                highlight_ids=[h.id for h in highlights],
+                output_width=int(settings_dict.get("output_width", 1080)),
+                output_height=int(settings_dict.get("output_height", 1920)),
+                fps=30,
+                smart_crop=bool(settings_dict.get("smart_crop", True)),
+                burn_subtitles=bool(settings_dict.get("subtitle", {}).get("enabled", True)),
+            )
+            project.status = "completed"
+            db.commit()
+            JobQueue.update_progress(
+                job_id,
+                stage="completed",
+                progress=100,
+                message=f"Generated {len(highlights)} scenes and rendered {len(clips)} vertical MP4 clips!",
+            )
+            JobQueue.mark_completed(
+                job_id,
+                message=f"Completed ({len(highlights)} scenes, {len(clips)} rendered 9:16 clips)",
+            )
+        else:
+            project.status = "ready_for_review"
+            db.commit()
 
-        # ---------------------------------------------------------------------
-        # Stage Completion: Ready for user review
-        # ---------------------------------------------------------------------
-        JobQueue.update_progress(job_id, stage="ready_for_review", progress=100, message=f"Generated {len(highlights)} highlights. Ready for review.")
-        JobQueue.mark_completed(job_id, message=f"Ready for review ({len(highlights)} candidate highlights)")
+            # ---------------------------------------------------------------------
+            # Stage Completion: Ready for user review
+            # ---------------------------------------------------------------------
+            JobQueue.update_progress(job_id, stage="ready_for_review", progress=100, message=f"Generated {len(highlights)} highlights. Ready for review.")
+            JobQueue.mark_completed(job_id, message=f"Ready for review ({len(highlights)} candidate highlights)")
 
     except Exception as exc:
         logger.error(f"Pipeline error on job {job_id}: {exc}\n{traceback.format_exc()}")

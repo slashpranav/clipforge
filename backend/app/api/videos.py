@@ -31,6 +31,7 @@ async def upload_video(
 
 
 @router.post("/youtube-reference", response_model=YouTubeReferenceResponse)
+@router.post("/youtube", response_model=YouTubeReferenceResponse)
 def submit_youtube_reference(
     req: YouTubeReferenceRequest,
     current_user: Annotated[User, Depends(get_current_user)],

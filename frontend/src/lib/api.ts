@@ -168,7 +168,7 @@ class ApiClient {
   }
 
   async checkYouTubeUrl(url: string): Promise<YouTubeReference> {
-    return this.request<YouTubeReference>('/videos/youtube', {
+    return this.request<YouTubeReference>('/videos/youtube-reference', {
       method: 'POST',
       body: JSON.stringify({ url }),
     });
@@ -235,6 +235,10 @@ class ApiClient {
     return this.request<Job>(`/jobs/${jobId}`);
   }
 
+  async listProjectJobs(projectId: string): Promise<Job[]> {
+    return this.request<Job[]>(`/projects/${projectId}/jobs`);
+  }
+
   async cancelJob(jobId: string): Promise<Job> {
     return this.request<Job>(`/jobs/${jobId}/cancel`, {
       method: 'POST',
@@ -286,11 +290,15 @@ class ApiClient {
   }
 
   getClipDownloadUrl(clipId: string): string {
-    return `${API_BASE}/clips/${clipId}/download`;
+    const token = this.getToken();
+    const qs = token ? `?token=${encodeURIComponent(token)}` : '';
+    return `${API_BASE}/clips/${clipId}/download${qs}`;
   }
 
   getClipSubtitlesUrl(clipId: string, format: 'srt' | 'vtt' = 'srt'): string {
-    return `${API_BASE}/clips/${clipId}/subtitles?format=${format}`;
+    const token = this.getToken();
+    const qs = token ? `&token=${encodeURIComponent(token)}` : '';
+    return `${API_BASE}/clips/${clipId}/subtitles?format=${format}${qs}`;
   }
 
   async requestSubtitleTranslation(clipId: string, targetLanguage: string): Promise<{ clip_id: string; status: string; target_language: string }> {

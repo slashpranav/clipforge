@@ -42,12 +42,13 @@ export default function NewProjectPage() {
   // Project configuration
   const [title, setTitle] = useState('');
   const [clipDuration, setClipDuration] = useState<number>(30);
-  const [numberOfHighlights, setNumberOfHighlights] = useState<number>(5);
+  const [numberOfHighlights, setNumberOfHighlights] = useState<number>(10);
   const [subtitleStyle, setSubtitleStyle] = useState<'clean' | 'bold_gold' | 'karaoke' | 'cinema'>('bold_gold');
   const [enableHindiVoice, setEnableHindiVoice] = useState(true);
   const [voiceStyle, setVoiceStyle] = useState<'energetic' | 'storytelling' | 'emotional' | 'suspenseful' | 'funny' | 'motivational'>('energetic');
   const [enableHindiTranslation, setEnableHindiTranslation] = useState(true);
   const [smartCrop, setSmartCrop] = useState(true);
+  const [autoRenderClips, setAutoRenderClips] = useState(true);
 
   // Submission state
   const [submitting, setSubmitting] = useState(false);
@@ -124,6 +125,7 @@ export default function NewProjectPage() {
         output_width: 1080,
         output_height: 1920,
         smart_crop: smartCrop,
+        auto_render_clips: autoRenderClips,
         subtitle: {
           enabled: true,
           mode: enableHindiTranslation ? 'translated' : 'original',
@@ -306,7 +308,7 @@ export default function NewProjectPage() {
             </div>
 
             {youtubeRef && (
-              <div className="p-4 rounded-xl bg-surface border border-surface-border space-y-3">
+              <div className="p-4 rounded-xl bg-surface border border-surface-border space-y-4">
                 <div className="flex gap-4 items-start">
                   {youtubeRef.thumbnail_url && (
                     <img
@@ -322,8 +324,29 @@ export default function NewProjectPage() {
                   </div>
                 </div>
 
-                <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-[11px] text-amber-200 leading-relaxed">
-                  <strong>Notice:</strong> {youtubeRef.policy_notice}
+                {youtubeRef.embed_url && (
+                  <div className="aspect-video w-full max-w-md rounded-xl overflow-hidden border border-surface-border bg-black">
+                    <iframe
+                      src={youtubeRef.embed_url}
+                      title={youtubeRef.title || 'YouTube Preview'}
+                      className="w-full h-full"
+                      allowFullScreen
+                    />
+                  </div>
+                )}
+
+                <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-[11px] text-amber-200 leading-relaxed space-y-2">
+                  <div>
+                    <strong>Platform & Rights Policy:</strong> {youtubeRef.policy_notice}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setInputMode('upload')}
+                    className="px-3 py-1.5 rounded-lg bg-brand-600 hover:bg-brand-500 text-white font-semibold text-xs transition inline-flex items-center gap-1.5"
+                  >
+                    <UploadCloud className="w-3.5 h-3.5" />
+                    Upload Authorized Video File to Clip
+                  </button>
                 </div>
               </div>
             )}
@@ -353,7 +376,7 @@ export default function NewProjectPage() {
             />
           </div>
 
-          {/* Clip Duration & Highlights Count */}
+          {/* Clip Duration & Number of Multi-Clips */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <label className="font-semibold text-slate-300">Target Clip Duration</label>
@@ -362,6 +385,7 @@ export default function NewProjectPage() {
                 onChange={(e) => setClipDuration(Number(e.target.value))}
                 className="w-full py-2.5 px-3 rounded-xl bg-surface border border-surface-border text-slate-200 focus:outline-none focus:border-brand-500"
               >
+                <option value={10}>10 Seconds (Rapid Highlight)</option>
                 <option value={15}>15 Seconds (Ultra Hook)</option>
                 <option value={30}>30 Seconds (Recommended Standard)</option>
                 <option value={45}>45 Seconds (Detailed Story)</option>
@@ -370,17 +394,37 @@ export default function NewProjectPage() {
             </div>
 
             <div className="space-y-1.5">
-              <label className="font-semibold text-slate-300">Target Highlight Count</label>
-              <select
-                value={numberOfHighlights}
-                onChange={(e) => setNumberOfHighlights(Number(e.target.value))}
-                className="w-full py-2.5 px-3 rounded-xl bg-surface border border-surface-border text-slate-200 focus:outline-none focus:border-brand-500"
-              >
-                <option value={3}>Top 3 Best Scenes</option>
-                <option value={5}>Top 5 Best Scenes (Standard)</option>
-                <option value={10}>Top 10 Ranked Opportunities</option>
-                <option value={15}>Top 15 Comprehensive List</option>
-              </select>
+              <label className="font-semibold text-slate-300 flex items-center justify-between">
+                <span>Number of Clips to Generate (Multi-Clip)</span>
+                <span className="text-[11px] font-mono text-brand-400">{numberOfHighlights} clips</span>
+              </label>
+              <div className="flex gap-2">
+                <select
+                  value={numberOfHighlights}
+                  onChange={(e) => setNumberOfHighlights(Number(e.target.value))}
+                  className="flex-1 py-2.5 px-3 rounded-xl bg-surface border border-surface-border text-slate-200 focus:outline-none focus:border-brand-500"
+                >
+                  <option value={3}>3 Clips</option>
+                  <option value={5}>5 Clips</option>
+                  <option value={10}>10 Clips (Multi-Clip Standard)</option>
+                  <option value={15}>15 Clips (Extended Multi-Clip)</option>
+                  <option value={20}>20 Clips (Maximum Multi-Clip)</option>
+                </select>
+                {[10, 15].map((preset) => (
+                  <button
+                    key={preset}
+                    type="button"
+                    onClick={() => setNumberOfHighlights(preset)}
+                    className={`px-3 py-2 rounded-xl border text-xs font-semibold transition ${
+                      numberOfHighlights === preset
+                        ? 'bg-brand-600 border-brand-500 text-white shadow-sm'
+                        : 'bg-surface border-surface-border text-slate-300 hover:border-brand-500/40'
+                    }`}
+                  >
+                    {preset}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
@@ -425,7 +469,20 @@ export default function NewProjectPage() {
           </div>
 
           {/* Toggles */}
-          <div className="pt-2 grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="pt-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <label className="flex items-center gap-2 p-3 rounded-xl bg-surface border border-surface-border cursor-pointer hover:border-brand-500/40 transition">
+              <input
+                type="checkbox"
+                checked={autoRenderClips}
+                onChange={(e) => setAutoRenderClips(e.target.checked)}
+                className="rounded text-brand-600 focus:ring-brand-500"
+              />
+              <div>
+                <div className="font-medium text-slate-200">Auto-Render Clips</div>
+                <div className="text-[10px] text-surface-muted">Output all {numberOfHighlights} MP4 shorts</div>
+              </div>
+            </label>
+
             <label className="flex items-center gap-2 p-3 rounded-xl bg-surface border border-surface-border cursor-pointer hover:border-brand-500/40 transition">
               <input
                 type="checkbox"

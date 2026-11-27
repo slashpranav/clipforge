@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
-from app.core.dependencies import get_current_user
+from app.core.dependencies import get_current_user, get_current_user_for_media
 from app.core.errors import AppError, ForbiddenError, NotFoundError
 from app.database.models.clip import Clip
 from app.database.models.project import Project
@@ -89,9 +89,9 @@ def list_project_clips(
 @router.get("/clips/{clip_id}/subtitles")
 def get_clip_subtitle_file(
     clip_id: str,
+    db: Annotated[Session, Depends(get_db)],
+    current_user: Annotated[User, Depends(get_current_user_for_media)],
     format: str = "srt",
-    db: Annotated[Session, Depends(get_db)] = None,
-    current_user: Annotated[User, Depends(get_current_user)] = None,
 ):
     """Serve subtitle track (SRT or VTT) directly for download or video player."""
     clip = db.query(Clip).filter(Clip.id == clip_id).first()
@@ -120,7 +120,7 @@ def get_clip_subtitle_file(
 def download_clip_file(
     clip_id: str,
     db: Annotated[Session, Depends(get_db)],
-    current_user: Annotated[User, Depends(get_current_user)],
+    current_user: Annotated[User, Depends(get_current_user_for_media)],
 ):
     """Authorized download of rendered MP4 Short with proper Content-Disposition."""
     clip = db.query(Clip).filter(Clip.id == clip_id).first()

@@ -68,6 +68,7 @@ export interface ProjectSettings {
   translation: TranslationSettings;
   voice: VoiceSettings;
   smart_crop: boolean;
+  auto_render_clips?: boolean;
 }
 
 export interface Project {
@@ -76,7 +77,7 @@ export interface Project {
   video_id: string;
   title: string;
   settings: ProjectSettings;
-  status: 'created' | 'analyzing' | 'ready' | 'rendering' | 'completed' | 'failed';
+  status: 'created' | 'analyzing' | 'processing' | 'ready' | 'ready_for_review' | 'rendering' | 'completed' | 'failed';
   created_at: string;
   updated_at: string;
 }

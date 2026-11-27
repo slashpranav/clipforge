@@ -22,8 +22,8 @@ class VoiceSettingsSchema(BaseModel):
 
 
 class ProjectSettingsSchema(BaseModel):
-    clip_duration_seconds: int = Field(default=30, ge=15, le=120, description="Target clip duration in seconds.")
-    number_of_highlights: int = Field(default=5, ge=1, le=25, description="Number of highlights to identify.")
+    clip_duration_seconds: int = Field(default=30, ge=5, le=120, description="Target clip duration in seconds.")
+    number_of_highlights: int = Field(default=10, ge=1, le=25, description="Number of clips / highlights to generate.")
     aspect_ratio: str = Field(default="9:16", pattern=r"^(9:16|1:1|16:9|4:5)$")
     output_width: int = Field(default=1080, ge=360, le=3840)
     output_height: int = Field(default=1920, ge=360, le=3840)
@@ -31,6 +31,7 @@ class ProjectSettingsSchema(BaseModel):
     translation: TranslationSettingsSchema = Field(default_factory=TranslationSettingsSchema)
     voice: VoiceSettingsSchema = Field(default_factory=VoiceSettingsSchema)
     smart_crop: bool = True
+    auto_render_clips: bool = True
 
 
 class ProjectCreateRequest(BaseModel):
