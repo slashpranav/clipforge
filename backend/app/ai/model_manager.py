@@ -1,3 +1,4 @@
+import os
 import threading
 from typing import Optional
 from app.config import settings
@@ -38,12 +39,23 @@ class ModelManager:
                     logger.warning(f"Could not patch faster_whisper decode_audio: {patch_err}")
 
                 from faster_whisper import WhisperModel
-                _whisper_instance = WhisperModel(
-                    size,
-                    device=settings.whisper_device,
-                    compute_type=settings.whisper_compute_type,
-                    cpu_threads=4,
-                )
+                threads = min(8, os.cpu_count() or 4)
+                try:
+                    # Try cached local weights first to avoid slow hub HTTP round-trips
+                    _whisper_instance = WhisperModel(
+                        size,
+                        device=settings.whisper_device,
+                        compute_type=settings.whisper_compute_type,
+                        cpu_threads=threads,
+                        local_files_only=True,
+                    )
+                except Exception:
+                    _whisper_instance = WhisperModel(
+                        size,
+                        device=settings.whisper_device,
+                        compute_type=settings.whisper_compute_type,
+                        cpu_threads=threads,
+                    )
             return _whisper_instance
 
     @classmethod

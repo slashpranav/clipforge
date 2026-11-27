@@ -39,9 +39,12 @@ class TranscriptionService:
             segments_iter, info = model.transcribe(
                 audio_data,
                 language=lang_arg,
+                beam_size=1,
+                best_of=1,
                 word_timestamps=True,
                 vad_filter=True,
-                temperature=(0.0, 0.2),
+                vad_parameters={"min_silence_duration_ms": 400},
+                temperature=0.0,
                 condition_on_previous_text=False,
             )
 

@@ -6,7 +6,7 @@ import numpy as np
 from app.core.logging import logger
 
 try:
-    from scenedetect import detect, ContentDetector, AdaptiveDetector
+    from scenedetect import open_video, SceneManager, ContentDetector
     SCENEDETECT_AVAILABLE = True
 except ImportError:
     SCENEDETECT_AVAILABLE = False
@@ -15,19 +15,26 @@ except ImportError:
 def detect_scene_boundaries(video_path: Path, min_scene_len_seconds: float = 2.0) -> List[float]:
     """
     Detect visual scene change timestamps (in seconds) across the video.
-    Uses PySceneDetect if installed; falls back to an efficient sampled histogram detector.
+    Uses downscaled PySceneDetect with frame_skip for rapid CPU performance.
     """
     if not video_path.exists():
         return [0.0]
 
     cuts: List[float] = [0.0]
 
-    # Try PySceneDetect
+    # Try PySceneDetect with downscaling & frame skip
     if SCENEDETECT_AVAILABLE:
         try:
-            logger.debug(f"Running PySceneDetect on {video_path.name}")
-            scene_list = detect(str(video_path), ContentDetector(threshold=27.0, min_scene_len=int(min_scene_len_seconds * 30)))
-            for start_time, end_time in scene_list:
+            logger.debug(f"Running fast PySceneDetect on {video_path.name}")
+            video = open_video(str(video_path))
+            scene_manager = SceneManager()
+            scene_manager.auto_downscale = True
+            scene_manager.add_detector(
+                ContentDetector(threshold=27.0, min_scene_len=max(10, int(min_scene_len_seconds * 8)))
+            )
+            scene_manager.detect_scenes(video=video, frame_skip=3)
+            scene_list = scene_manager.get_scene_list()
+            for start_time, _ in scene_list:
                 sec = round(start_time.get_seconds(), 2)
                 if sec > 0.0 and (not cuts or sec - cuts[-1] >= min_scene_len_seconds):
                     cuts.append(sec)

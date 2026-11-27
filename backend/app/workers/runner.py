@@ -25,7 +25,7 @@ def worker_loop():
                 run_project_pipeline(claimed.id)
             else:
                 # Sleep briefly between polls when idle
-                time.sleep(1.0)
+                time.sleep(0.3)
         except Exception as exc:
             logger.error(f"Error in worker loop: {exc}")
             time.sleep(2.0)

@@ -1,5 +1,7 @@
 import json
+import os
 import uuid
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import List, Optional
 from sqlalchemy.orm import Session
@@ -10,6 +12,7 @@ from app.database.models.highlight import Highlight
 from app.database.models.project import Project
 from app.database.models.video import Video
 from app.processors.face_tracking import track_faces_in_interval
+from app.processors.ffmpeg import probe_media_file
 from app.processors.renderer import render_short_clip
 from app.schemas.clip import ClipResponse
 from app.services.cleanup_service import CleanupService
@@ -76,43 +79,65 @@ class ClipService:
                 db.delete(ec)
         db.flush()
 
+        source_meta = probe_media_file(source_abs)
+
+        # Prepare per-clip work items on main DB session before parallel encoding
+        tasks = []
         for h in target_highlights:
             clip_id = str(uuid.uuid4())
             clip_dest = storage_root / "clips" / project_id / f"{clip_id}.mp4"
             thumb_dest = storage_root / "thumbnails" / f"{clip_id}.jpg"
-
-            # 1. Track faces if smart crop enabled
-            face_track_info = None
-            if smart_crop:
-                face_track_info = track_faces_in_interval(source_abs, h.start_seconds, h.end_seconds)
-
-            # 2. Extract subtitle cues
             cues = SubtitleService.extract_cues_for_interval(db, video.id, h.start_seconds, h.end_seconds)
+            tasks.append({
+                "clip_id": clip_id,
+                "highlight_id": h.id,
+                "start_seconds": h.start_seconds,
+                "end_seconds": h.end_seconds,
+                "clip_dest": clip_dest,
+                "thumb_dest": thumb_dest,
+                "cues": cues,
+            })
 
-            # 3. Render MP4
+        def _render_single(task: dict) -> dict:
+            face_track_info = (
+                track_faces_in_interval(source_abs, task["start_seconds"], task["end_seconds"])
+                if smart_crop
+                else None
+            )
             res = render_short_clip(
                 source_video_path=source_abs,
-                output_clip_path=clip_dest,
-                thumbnail_path=thumb_dest,
-                start_seconds=h.start_seconds,
-                end_seconds=h.end_seconds,
+                output_clip_path=task["clip_dest"],
+                thumbnail_path=task["thumb_dest"],
+                start_seconds=task["start_seconds"],
+                end_seconds=task["end_seconds"],
                 output_width=output_width,
                 output_height=output_height,
                 fps=fps,
                 smart_crop=smart_crop,
                 face_track_info=face_track_info,
-                cues=cues,
+                cues=task["cues"],
                 burn_subtitles=burn_subtitles,
                 subtitle_style=sub_style,
+                source_meta=source_meta,
             )
+            return {"task": task, "res": res}
 
+        max_workers = min(4, max(1, (os.cpu_count() or 2) // 2), len(tasks))
+        with ThreadPoolExecutor(max_workers=max_workers) as pool:
+            results = list(pool.map(_render_single, tasks))
+
+        for item in results:
+            task = item["task"]
+            res = item["res"]
+            clip_dest = task["clip_dest"]
+            thumb_dest = task["thumb_dest"]
             rel_clip_path = clip_dest.relative_to(storage_root).as_posix()
             rel_thumb_path = thumb_dest.relative_to(storage_root).as_posix() if thumb_dest.exists() else None
 
             clip_record = Clip(
-                id=clip_id,
+                id=task["clip_id"],
                 project_id=project_id,
-                highlight_id=h.id,
+                highlight_id=task["highlight_id"],
                 file_path=rel_clip_path,
                 thumbnail_path=rel_thumb_path,
                 duration_seconds=res["duration_seconds"],

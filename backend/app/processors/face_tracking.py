@@ -22,11 +22,11 @@ def track_faces_in_interval(
     video_path: Path,
     start_time: float,
     end_time: float,
-    sample_fps: float = 1.5,
+    sample_fps: float = 0.5,
 ) -> Dict[str, Any]:
     """
-    Sample frames in [start_time, end_time] at ~1-2 fps to detect faces and calculate
-    normalized horizontal centroid (cx in [0, 1]) for intelligent 9:16 framing.
+    Sample frames in [start_time, end_time] efficiently (up to 8 keyframes)
+    to detect faces/saliency and calculate normalized horizontal centroid (cx in [0, 1]).
     """
     cap = cv2.VideoCapture(str(video_path))
     if not cap.isOpened():
@@ -44,7 +44,7 @@ def track_faces_in_interval(
 
     frontal, profile = _load_cascades()
     duration = max(0.5, end_time - start_time)
-    num_samples = min(60, max(4, int(duration * sample_fps)))
+    num_samples = min(8, max(3, int(duration * sample_fps)))
     step_sec = duration / max(1, num_samples)
 
     points: List[Dict[str, Any]] = []

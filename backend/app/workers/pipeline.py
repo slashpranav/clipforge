@@ -8,6 +8,7 @@ from app.ai.model_manager import ModelManager
 from app.core.logging import logger
 from app.database.models.job import Job
 from app.database.models.project import Project
+from app.database.models.transcript import Transcript
 from app.database.models.video import Video
 from app.database.session import SessionLocal
 from app.processors.audio import calculate_audio_energy, extract_audio_to_wav
@@ -60,13 +61,16 @@ def run_project_pipeline(job_id: str) -> None:
             energy_points, _ = calculate_audio_energy(extracted_wav)
 
         # ---------------------------------------------------------------------
-        # Stage C & D: Transcription & Sentence Segmentation
+        # Stage C & D: Transcription & Sentence Segmentation (skip if already cached)
         # ---------------------------------------------------------------------
         if JobQueue.is_cancelled(job_id):
             return
-        JobQueue.update_progress(job_id, stage="transcribing", progress=40, message="Transcribing speech with faster-whisper CPU INT8...")
+        JobQueue.update_progress(job_id, stage="transcribing", progress=40, message="Transcribing speech with fast CPU inference...")
 
-        if extracted_wav:
+        cached_transcript = db.query(Transcript).filter(Transcript.video_id == video.id).first()
+        if cached_transcript and cached_transcript.segments_json and cached_transcript.segments_json != "[]":
+            logger.info(f"Reusing cached transcript for video {video.id}")
+        elif extracted_wav:
             sub_settings = settings_dict.get("subtitle", {})
             source_lang = "auto" if sub_settings.get("mode") == "translated" else sub_settings.get("language", "auto")
             tr_res = TranscriptionService.transcribe_audio_file(extracted_wav, language=source_lang)

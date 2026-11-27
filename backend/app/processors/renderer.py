@@ -22,7 +22,8 @@ def render_short_clip(
     cues: Optional[List[Dict[str, Any]]] = None,
     burn_subtitles: bool = True,
     subtitle_style: str = "clean",
-    crf: int = 22,
+    crf: int = 23,
+    source_meta: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """
     Render a 9:16 vertical Short MP4 with face-aware smart crop, optional burned-in subtitles,
@@ -32,10 +33,10 @@ def render_short_clip(
     thumbnail_path.parent.mkdir(parents=True, exist_ok=True)
     ffmpeg = get_ffmpeg_binary()
 
-    source_meta = probe_media_file(source_video_path)
-    src_w = source_meta["width"]
-    src_h = source_meta["height"]
-    has_audio = source_meta["audio_present"]
+    meta = source_meta or probe_media_file(source_video_path)
+    src_w = meta["width"]
+    src_h = meta["height"]
+    has_audio = meta["audio_present"]
 
     duration = max(1.0, end_seconds - start_seconds)
 
@@ -80,7 +81,8 @@ def render_short_clip(
         "-i", str(source_video_path),
         "-vf", filter_str,
         "-c:v", "libx264",
-        "-preset", "veryfast",
+        "-preset", "ultrafast",
+        "-threads", "2",
         "-crf", str(crf),
     ]
 

@@ -47,7 +47,7 @@ class Settings(BaseSettings):
     allowed_video_extensions: str = ".mp4,.mov,.mkv,.webm"
     max_video_duration_seconds: int = 14400
 
-    whisper_model: str = "small"
+    whisper_model: str = "base"
     whisper_device: str = "cpu"
     whisper_compute_type: str = "int8"
     whisper_language: str = "auto"
