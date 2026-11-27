@@ -14,7 +14,7 @@ body {
     radial-gradient(ellipse 50% 35% at 95% 5%, rgba(249, 115, 22, 0.06), transparent);
   background-attachment: fixed;
   color: var(--foreground);
-  overflow-x: hidden;
+  overflow-x: clip;
 }
 
 /* Custom warm off-white scrollbars */

@@ -1,6 +1,7 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
 import { Clip } from '@/lib/types';
 import { api } from '@/lib/api';
@@ -14,18 +15,24 @@ interface VideoPlayerModalProps {
 }
 
 export function VideoPlayerModal({ clip, onClose, onVoiceRequest }: VideoPlayerModalProps) {
-  if (!clip) return null;
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!clip || !mounted) return null;
 
   const downloadUrl = api.getClipDownloadUrl(clip.id);
   const srtUrl = api.getClipSubtitlesUrl(clip.id, 'srt');
   const vttUrl = api.getClipSubtitlesUrl(clip.id, 'vtt');
 
-  return (
+  return createPortal(
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       onClick={onClose}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
+      className="fixed inset-0 z-[100] !mt-0 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
     >
       <motion.div
         initial={{ opacity: 0, scale: 0.94, y: 14 }}
@@ -163,6 +170,7 @@ export function VideoPlayerModal({ clip, onClose, onVoiceRequest }: VideoPlayerM
           </div>
         </div>
       </motion.div>
-    </motion.div>
+    </motion.div>,
+    document.body
   );
 }

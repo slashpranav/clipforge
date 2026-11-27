@@ -27,7 +27,7 @@ export function Sidebar() {
   ];
 
   return (
-    <aside className="hidden md:flex w-64 border-r border-surface-border bg-surface-card relative overflow-hidden flex-col justify-between shrink-0 h-screen sticky top-0 select-none">
+    <aside className="hidden md:flex w-64 border-r border-surface-border bg-surface-card relative overflow-hidden flex-col justify-between shrink-0 h-screen sticky top-0 z-20 select-none">
       {/* Left Sidebar Custom Background Artwork */}
       <img
         src="/sidebar-bg.jpg"
