@@ -20,29 +20,27 @@ export function ProgressBar({ progress, stage, message }: ProgressBarProps) {
       <div className="flex justify-between items-center text-xs gap-3">
         <div className="flex items-center gap-2 min-w-0">
           {clamped < 100 ? (
-            <Loader2 className="w-3.5 h-3.5 animate-spin text-brand-400 shrink-0" />
+            <Loader2 className="w-3.5 h-3.5 animate-spin text-brand-600 shrink-0" />
           ) : (
-            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
           )}
-          <span className="font-semibold text-white uppercase tracking-wider text-[11px] shrink-0">
+          <span className="font-bold text-slate-800 uppercase tracking-wider text-[11px] shrink-0">
             {formatStage(stage)}
           </span>
-          {message && (
-            <span className="text-slate-400 truncate">{message}</span>
-          )}
+          {message && <span className="text-slate-500 truncate">{message}</span>}
         </div>
-        <span className="font-mono font-semibold text-brand-300 tabular-nums shrink-0">
+        <span className="font-mono font-bold text-brand-700 tabular-nums shrink-0">
           {Math.round(clamped)}%
         </span>
       </div>
 
-      <div className="relative w-full h-2.5 rounded-full bg-white/[0.06] overflow-hidden border border-white/[0.08]">
+      <div className="relative w-full h-2.5 rounded-full bg-slate-100 overflow-hidden border border-slate-200/80">
         <div
-          className="relative h-full bg-gradient-to-r from-brand-600 via-indigo-500 to-cyan-400 rounded-full transition-all duration-500 ease-out overflow-hidden"
+          className="relative h-full bg-gradient-to-r from-brand-600 via-rose-500 to-amber-500 rounded-full transition-all duration-500 ease-out overflow-hidden"
           style={{ width: `${clamped}%` }}
         >
           {clamped < 100 && (
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/25 to-transparent animate-shimmer" />
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent animate-shimmer" />
           )}
         </div>
       </div>

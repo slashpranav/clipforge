@@ -2,8 +2,10 @@
 
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import { AnimatePresence, motion } from 'framer-motion';
 import { api } from '@/lib/api';
 import { Clip, Highlight, Job, Project, Video } from '@/lib/types';
+import { AnimatedContent, BlurText, CountUp, Magnet, SpotlightCard } from '@/components/reactbits';
 import {
   Sparkles,
   Scissors,
@@ -34,31 +36,24 @@ export default function ProjectStudioPage() {
   const router = useRouter();
   const projectId = params.id as string;
 
-  // Active studio tab
   const [activeTab, setActiveTab] = useState<'highlights' | 'pipeline' | 'clips' | 'voice' | 'export'>('highlights');
 
-  // Core Data
   const [project, setProject] = useState<Project | null>(null);
   const [video, setVideo] = useState<Video | null>(null);
   const [highlights, setHighlights] = useState<Highlight[]>([]);
   const [clips, setClips] = useState<Clip[]>([]);
   const [activeJob, setActiveJob] = useState<Job | null>(null);
 
-  // UI state
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
-
-  // Video preview modal
   const [selectedClipForModal, setSelectedClipForModal] = useState<Clip | null>(null);
 
-  // In-place highlight edit state
   const [editingHighlightId, setEditingHighlightId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState('');
   const [editStart, setEditStart] = useState<number>(0);
   const [editEnd, setEditEnd] = useState<number>(0);
 
-  // Fetch full project state
   const refreshProjectData = async () => {
     try {
       const proj = await api.getProject(projectId);
@@ -94,7 +89,6 @@ export default function ProjectStudioPage() {
     refreshProjectData();
   }, [projectId]);
 
-  // Real-time Job Polling
   useEffect(() => {
     let timer: NodeJS.Timeout;
 
@@ -133,7 +127,6 @@ export default function ProjectStudioPage() {
     return () => clearInterval(timer);
   }, [project?.status, activeJob]);
 
-  // Action: Launch / Re-run Analysis
   const handleStartAnalysis = async () => {
     try {
       setActionLoading(true);
@@ -150,7 +143,6 @@ export default function ProjectStudioPage() {
     }
   };
 
-  // Action: Toggle Highlight Selection
   const handleToggleHighlight = async (highlight: Highlight) => {
     try {
       const updated = await api.updateHighlight(highlight.id, {
@@ -162,7 +154,6 @@ export default function ProjectStudioPage() {
     }
   };
 
-  // Action: Bulk Select / Deselect Highlights
   const handleToggleAllHighlights = async (selectAll: boolean) => {
     const toUpdate = highlights.filter((h) => h.selected !== selectAll);
     if (toUpdate.length === 0) return;
@@ -180,7 +171,6 @@ export default function ProjectStudioPage() {
     }
   };
 
-  // Action: Save In-place Highlight Edit
   const handleSaveHighlightEdit = async (highlightId: string) => {
     try {
       const updated = await api.updateHighlight(highlightId, {
@@ -196,7 +186,6 @@ export default function ProjectStudioPage() {
     }
   };
 
-  // Action: Generate 9:16 Vertical Clips
   const handleRenderClips = async () => {
     const selectedHighlights = highlights.filter((h) => h.selected);
     if (selectedHighlights.length === 0) {
@@ -225,7 +214,6 @@ export default function ProjectStudioPage() {
     }
   };
 
-  // Action: Voice-Over Request
   const handleVoiceOverRequest = async (clipId: string) => {
     try {
       setActionLoading(true);
@@ -241,8 +229,8 @@ export default function ProjectStudioPage() {
   if (loading) {
     return (
       <div className="min-h-[60vh] flex flex-col items-center justify-center space-y-3">
-        <Loader2 className="w-8 h-8 animate-spin text-brand-400" />
-        <p className="text-xs text-slate-400">Loading ClipForge Studio...</p>
+        <Loader2 className="w-8 h-8 animate-spin text-brand-600" />
+        <p className="text-xs text-slate-500">Loading ClipForge Studio...</p>
       </div>
     );
   }
@@ -250,8 +238,8 @@ export default function ProjectStudioPage() {
   if (!project) {
     return (
       <div className="p-10 text-center rounded-3xl studio-card space-y-4 max-w-md mx-auto mt-10">
-        <AlertCircle className="w-10 h-10 text-rose-400 mx-auto" />
-        <h2 className="text-lg font-bold text-white">Project Not Found</h2>
+        <AlertCircle className="w-10 h-10 text-rose-500 mx-auto" />
+        <h2 className="text-lg font-bold text-slate-900">Project Not Found</h2>
         <button
           onClick={() => router.push('/projects')}
           className="px-5 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white text-xs font-semibold transition"
@@ -265,34 +253,35 @@ export default function ProjectStudioPage() {
   const selectedCount = highlights.filter((h) => h.selected).length;
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-300">
+    <div className="space-y-6">
       {/* Studio Workspace Header */}
-      <div className="p-6 rounded-3xl studio-card space-y-4">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-          <div className="space-y-1.5 min-w-0">
-            <div className="flex items-center gap-2 text-xs text-slate-400">
-              <button
-                onClick={() => router.push('/projects')}
-                className="hover:text-white transition inline-flex items-center gap-1"
-              >
-                <ArrowLeft className="w-3.5 h-3.5" />
-                Projects
-              </button>
-              <span className="text-slate-600">/</span>
-              <span className="text-slate-300 truncate max-w-xs">{project.title}</span>
-            </div>
+      <AnimatedContent distance={14} duration={0.4}>
+        <SpotlightCard className="p-6 rounded-3xl studio-card space-y-4">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div className="space-y-1.5 min-w-0">
+              <div className="flex items-center gap-2 text-xs text-slate-500">
+                <button
+                  onClick={() => router.push('/projects')}
+                  className="hover:text-slate-900 transition inline-flex items-center gap-1 font-medium"
+                >
+                  <ArrowLeft className="w-3.5 h-3.5" />
+                  Projects
+                </button>
+                <span className="text-slate-300">/</span>
+                <span className="text-slate-700 font-medium truncate max-w-xs">{project.title}</span>
+              </div>
 
-            <div className="flex flex-wrap items-center gap-3">
-              <h1 className="text-xl md:text-2xl font-extrabold text-white tracking-tight truncate">
-                {project.title}
-              </h1>
+              <div className="flex flex-wrap items-center gap-3">
+                <h1 className="text-xl md:text-2xl font-extrabold text-slate-900 tracking-tight truncate">
+                  <BlurText text={project.title} delay={35} />
+                </h1>
               <span
                 className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
                   project.status === 'ready' || project.status === 'ready_for_review' || project.status === 'completed'
-                    ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30'
+                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                     : project.status === 'analyzing' || project.status === 'processing'
-                    ? 'bg-brand-500/15 text-brand-300 border border-brand-500/30'
-                    : 'bg-slate-700/30 text-slate-300 border border-slate-600/30'
+                    ? 'bg-brand-50 text-brand-700 border border-brand-200'
+                    : 'bg-slate-100 text-slate-600 border border-slate-200'
                 }`}
               >
                 <span className="w-1.5 h-1.5 rounded-full bg-current" />
@@ -305,67 +294,70 @@ export default function ProjectStudioPage() {
             <button
               onClick={handleStartAnalysis}
               disabled={actionLoading || project.status === 'analyzing' || project.status === 'processing'}
-              className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.1] text-slate-200 hover:text-white text-xs font-semibold disabled:opacity-45 transition"
+              className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-surface-card hover:bg-surface-elevated border border-surface-border text-slate-700 hover:text-slate-900 text-xs font-semibold disabled:opacity-45 shadow-sm transition"
             >
               <RotateCcw
-                className={`w-3.5 h-3.5 text-brand-400 ${
+                className={`w-3.5 h-3.5 text-brand-600 ${
                   project.status === 'analyzing' || project.status === 'processing' ? 'animate-spin' : ''
                 }`}
               />
               {project.status === 'analyzing' || project.status === 'processing' ? 'Analyzing...' : 'Re-run Analysis'}
             </button>
 
-            <button
-              onClick={handleRenderClips}
-              disabled={actionLoading || selectedCount === 0}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 disabled:opacity-45 text-white text-xs font-semibold shadow-lg shadow-brand-600/25 ring-1 ring-white/15 transition"
-            >
-              <Scissors className="w-3.5 h-3.5" />
-              Render {selectedCount} Short{selectedCount === 1 ? '' : 's'} (9:16)
-            </button>
+            <Magnet magnetStrength={5} padding={14}>
+              <button
+                onClick={handleRenderClips}
+                disabled={actionLoading || selectedCount === 0}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-brand-600 to-orange-500 hover:from-brand-500 hover:to-orange-400 disabled:opacity-45 text-white text-xs font-semibold shadow-md shadow-brand-600/20 transition"
+              >
+                <Scissors className="w-3.5 h-3.5" />
+                Render {selectedCount} Short{selectedCount === 1 ? '' : 's'} (9:16)
+              </button>
+            </Magnet>
           </div>
         </div>
 
         {/* Studio Quick Stats Strip */}
-        <div className="pt-3 border-t border-white/[0.06] flex flex-wrap items-center gap-5 text-[11px] text-slate-400">
+        <div className="pt-3 border-t border-surface-border/70 flex flex-wrap items-center gap-5 text-[11px] text-slate-500">
           {video && (
             <span className="flex items-center gap-1.5">
-              <Clock className="w-3.5 h-3.5 text-slate-500" />
-              Source: <strong className="text-slate-200 font-mono">{Math.round(video.duration_seconds)}s</strong> ({video.width}×{video.height})
+              <Clock className="w-3.5 h-3.5 text-slate-400" />
+              Source: <strong className="text-slate-900 font-mono">{Math.round(video.duration_seconds)}s</strong> ({video.width}×{video.height})
             </span>
           )}
           <span>
-            Detected Scenes: <strong className="text-white font-mono">{highlights.length}</strong>
+            Detected Scenes: <strong className="text-slate-900 font-mono"><CountUp to={highlights.length} duration={0.7} /></strong>
           </span>
           <span>
-            Rendered Shorts: <strong className="text-emerald-400 font-mono">{clips.length}</strong>
+            Rendered Shorts: <strong className="text-emerald-600 font-mono"><CountUp to={clips.length} duration={0.7} /></strong>
           </span>
           <span>
-            Output Format: <strong className="text-brand-300 font-mono">1080×1920 (9:16)</strong>
+            Output Format: <strong className="text-brand-700 font-mono">1080×1920 (9:16)</strong>
           </span>
         </div>
-      </div>
+        </SpotlightCard>
+      </AnimatedContent>
 
       {/* Notification Toast */}
       {notification && (
         <div
           className={`p-3.5 rounded-2xl border text-xs flex items-center justify-between transition ${
             notification.type === 'success'
-              ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-200'
-              : 'bg-rose-500/10 border-rose-500/30 text-rose-200'
+              ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+              : 'bg-rose-50 border-rose-200 text-rose-800'
           }`}
         >
           <div className="flex items-center gap-2.5">
             {notification.type === 'success' ? (
-              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
             ) : (
-              <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+              <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
             )}
-            <span>{notification.message}</span>
+            <span className="font-medium">{notification.message}</span>
           </div>
           <button
             onClick={() => setNotification(null)}
-            className="text-slate-400 hover:text-white p-1"
+            className="text-slate-400 hover:text-slate-700 p-1"
           >
             <X className="w-4 h-4" />
           </button>
@@ -373,7 +365,7 @@ export default function ProjectStudioPage() {
       )}
 
       {/* Segmented Studio Navigation Bar */}
-      <div className="p-1.5 rounded-2xl bg-white/[0.03] border border-white/[0.07] flex overflow-x-auto gap-1.5">
+      <div className="p-1.5 rounded-2xl bg-surface-card border border-surface-border shadow-sm flex overflow-x-auto gap-1.5">
         {[
           { key: 'highlights', label: `Best Scenes (${highlights.length})`, icon: Sparkles },
           {
@@ -392,15 +384,22 @@ export default function ProjectStudioPage() {
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key as any)}
-              className={`px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2 transition whitespace-nowrap ${
+              className={`relative px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2 transition-colors whitespace-nowrap ${
                 active
-                  ? 'bg-gradient-to-r from-brand-600/90 to-indigo-600/90 text-white shadow-md ring-1 ring-white/15'
-                  : 'text-slate-400 hover:text-white hover:bg-white/[0.04]'
+                  ? 'text-white'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-surface-elevated'
               }`}
             >
-              <Icon className="w-3.5 h-3.5" />
-              {tab.label}
-              {tab.pulse && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />}
+              {active && (
+                <motion.span
+                  layoutId="studio-active-tab"
+                  transition={{ type: 'spring', stiffness: 360, damping: 30 }}
+                  className="absolute inset-0 rounded-xl bg-gradient-to-r from-brand-600 to-orange-500 shadow-sm z-0"
+                />
+              )}
+              <Icon className="relative z-10 w-3.5 h-3.5" />
+              <span className="relative z-10">{tab.label}</span>
+              {tab.pulse && <span className="relative z-10 w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />}
             </button>
           );
         })}
@@ -411,19 +410,19 @@ export default function ProjectStudioPage() {
         <div className="space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
-              <h2 className="text-base font-bold text-white">Ranked Clipping Opportunities</h2>
-              <p className="text-xs text-slate-400">
+              <h2 className="text-base font-bold text-slate-900">Ranked Clipping Opportunities</h2>
+              <p className="text-xs text-slate-500">
                 Sentence-aligned windows scored on hook energy, lexical density, and visual framing.
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-2 self-start">
               {highlights.length > 0 && (
-                <div className="flex items-center gap-1 p-1 rounded-xl bg-white/[0.03] border border-white/[0.07] text-[11px]">
+                <div className="flex items-center gap-1 p-1 rounded-xl bg-surface-card border border-surface-border shadow-sm text-[11px]">
                   <button
                     type="button"
                     disabled={actionLoading}
                     onClick={() => handleToggleAllHighlights(true)}
-                    className="px-2.5 py-1 rounded-lg text-slate-300 hover:text-white hover:bg-white/[0.06] transition font-medium"
+                    className="px-2.5 py-1 rounded-lg text-slate-700 hover:text-brand-700 hover:bg-brand-50 transition font-semibold"
                   >
                     Select All
                   </button>
@@ -431,33 +430,33 @@ export default function ProjectStudioPage() {
                     type="button"
                     disabled={actionLoading}
                     onClick={() => handleToggleAllHighlights(false)}
-                    className="px-2.5 py-1 rounded-lg text-slate-400 hover:text-rose-300 hover:bg-rose-500/10 transition font-medium"
+                    className="px-2.5 py-1 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50 transition font-semibold"
                   >
                     Clear
                   </button>
                 </div>
               )}
-              <div className="text-xs px-3 py-1.5 rounded-xl bg-white/[0.03] border border-white/[0.07] text-slate-300">
-                <span className="font-bold text-brand-300 tabular-nums">{selectedCount}</span> of {highlights.length} selected for 9:16 render
+              <div className="text-xs px-3 py-1.5 rounded-xl bg-surface-card border border-surface-border shadow-sm text-slate-600">
+                <span className="font-bold text-brand-700 tabular-nums">{selectedCount}</span> of {highlights.length} selected for 9:16 render
               </div>
             </div>
           </div>
 
           {highlights.length === 0 ? (
             <div className="p-12 text-center rounded-3xl studio-card space-y-4">
-              <div className="w-12 h-12 rounded-2xl bg-brand-500/15 border border-brand-500/25 text-brand-400 flex items-center justify-center mx-auto">
+              <div className="w-12 h-12 rounded-2xl bg-brand-50 border border-brand-200 text-brand-600 flex items-center justify-center mx-auto">
                 <Sparkles className="w-6 h-6" />
               </div>
               <div>
-                <h3 className="font-bold text-white text-base">No scenes analyzed yet</h3>
-                <p className="text-xs text-slate-400 max-w-sm mx-auto mt-1">
+                <h3 className="font-bold text-slate-900 text-base">No scenes analyzed yet</h3>
+                <p className="text-xs text-slate-500 max-w-sm mx-auto mt-1">
                   Run the AI pipeline to automatically extract audio, transcribe speech, and score top scenes.
                 </p>
               </div>
               <button
                 onClick={handleStartAnalysis}
                 disabled={actionLoading || project.status === 'analyzing' || project.status === 'processing'}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-brand-600 to-indigo-600 text-white font-semibold text-xs shadow-lg transition"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-brand-600 to-orange-500 text-white font-semibold text-xs shadow-md transition"
               >
                 <Sparkles className="w-3.5 h-3.5" />
                 Start AI Scene Analysis
@@ -469,14 +468,14 @@ export default function ProjectStudioPage() {
                 const isEditing = editingHighlightId === h.id;
 
                 return (
-                  <div
-                    key={h.id}
-                    className={`p-5 rounded-2xl border transition space-y-3.5 ${
-                      h.selected
-                        ? 'studio-card border-brand-500/40 shadow-glow'
-                        : 'bg-[#0e111a] border-white/[0.06] opacity-75'
-                    }`}
-                  >
+                  <AnimatedContent key={h.id} delay={Math.min(idx * 0.04, 0.3)} distance={14}>
+                    <SpotlightCard
+                      className={`p-5 rounded-2xl border transition space-y-3.5 ${
+                        h.selected
+                          ? 'studio-card border-brand-300 shadow-glow'
+                          : 'bg-surface-card/70 border-surface-border opacity-75'
+                      }`}
+                    >
                     <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
                       <div className="flex items-start gap-3.5 min-w-0">
                         <button
@@ -484,8 +483,8 @@ export default function ProjectStudioPage() {
                           onClick={() => handleToggleHighlight(h)}
                           className={`w-5 h-5 mt-0.5 rounded-md border flex items-center justify-center transition shrink-0 ${
                             h.selected
-                              ? 'bg-brand-600 border-brand-400 text-white shadow-sm'
-                              : 'bg-black/30 border-white/20 text-transparent hover:border-brand-400'
+                              ? 'bg-brand-600 border-brand-600 text-white shadow-sm'
+                              : 'bg-surface-card border-slate-300 text-transparent hover:border-brand-500'
                           }`}
                         >
                           <Check className="w-3.5 h-3.5" />
@@ -496,10 +495,10 @@ export default function ProjectStudioPage() {
                             <span
                               className={`text-[11px] font-mono font-bold px-2 py-0.5 rounded-md border ${
                                 idx === 0
-                                  ? 'bg-amber-500/15 text-amber-300 border-amber-500/30'
+                                  ? 'bg-amber-50 text-amber-700 border-amber-200'
                                   : idx < 3
-                                  ? 'bg-brand-500/15 text-brand-300 border-brand-500/30'
-                                  : 'bg-white/[0.04] text-slate-300 border-white/[0.08]'
+                                  ? 'bg-brand-50 text-brand-700 border-brand-200'
+                                  : 'bg-slate-100 text-slate-600 border-slate-200'
                               }`}
                             >
                               #{idx + 1}
@@ -509,14 +508,14 @@ export default function ProjectStudioPage() {
                                 type="text"
                                 value={editTitle}
                                 onChange={(e) => setEditTitle(e.target.value)}
-                                className="py-1 px-2.5 text-sm rounded-lg bg-black/40 border border-brand-500 text-white focus:outline-none"
+                                className="py-1 px-2.5 text-sm rounded-lg bg-surface-card border border-brand-500 text-slate-900 focus:outline-none"
                               />
                             ) : (
-                              <h3 className="font-bold text-white text-sm">{h.title}</h3>
+                              <h3 className="font-bold text-slate-900 text-sm">{h.title}</h3>
                             )}
                           </div>
 
-                          <p className="text-xs text-brand-300/90 font-medium">{h.reason}</p>
+                          <p className="text-xs text-brand-700 font-medium">{h.reason}</p>
                         </div>
                       </div>
 
@@ -525,12 +524,12 @@ export default function ProjectStudioPage() {
                       </div>
                     </div>
 
-                    <div className="p-3.5 rounded-xl bg-black/30 border border-white/[0.05] text-xs text-slate-300 italic leading-relaxed">
+                    <div className="p-3.5 rounded-xl bg-surface-elevated/70 border border-surface-border text-xs text-slate-700 italic leading-relaxed">
                       "{h.transcript_excerpt || 'Dialogue moment from speech transcript...'}"
                     </div>
 
-                    <div className="flex flex-wrap items-center justify-between text-xs pt-2 border-t border-white/[0.05] gap-2">
-                      <div className="flex items-center gap-4 text-slate-400 font-mono text-[11px]">
+                    <div className="flex flex-wrap items-center justify-between text-xs pt-2 border-t border-surface-border/60 gap-2">
+                      <div className="flex items-center gap-4 text-slate-500 font-mono text-[11px]">
                         {isEditing ? (
                           <div className="flex items-center gap-2 flex-wrap">
                             <span>Start:</span>
@@ -539,7 +538,7 @@ export default function ProjectStudioPage() {
                               step="0.1"
                               value={editStart}
                               onChange={(e) => setEditStart(Number(e.target.value))}
-                              className="w-16 py-1 px-2 rounded-lg bg-black/40 border border-white/15 text-white text-xs"
+                              className="w-16 py-1 px-2 rounded-lg bg-surface-card border border-slate-300 text-slate-900 text-xs"
                             />
                             <span>End:</span>
                             <input
@@ -547,7 +546,7 @@ export default function ProjectStudioPage() {
                               step="0.1"
                               value={editEnd}
                               onChange={(e) => setEditEnd(Number(e.target.value))}
-                              className="w-16 py-1 px-2 rounded-lg bg-black/40 border border-white/15 text-white text-xs"
+                              className="w-16 py-1 px-2 rounded-lg bg-surface-card border border-slate-300 text-slate-900 text-xs"
                             />
                             <button
                               onClick={() => handleSaveHighlightEdit(h.id)}
@@ -558,7 +557,7 @@ export default function ProjectStudioPage() {
                             </button>
                             <button
                               onClick={() => setEditingHighlightId(null)}
-                              className="p-1.5 rounded-lg bg-white/[0.06] text-slate-300 hover:text-white"
+                              className="p-1.5 rounded-lg bg-surface-elevated text-slate-600 hover:text-slate-900"
                               title="Cancel"
                             >
                               <X className="w-3.5 h-3.5" />
@@ -566,11 +565,11 @@ export default function ProjectStudioPage() {
                           </div>
                         ) : (
                           <>
-                            <span className="text-slate-200">
+                            <span className="text-slate-800 font-semibold">
                               {Math.floor(h.start_seconds / 60)}:{(h.start_seconds % 60).toFixed(1).padStart(4, '0')} →{' '}
                               {Math.floor(h.end_seconds / 60)}:{(h.end_seconds % 60).toFixed(1).padStart(4, '0')}
                             </span>
-                            <span className="px-2 py-0.5 rounded bg-white/[0.04] text-slate-300">
+                            <span className="px-2 py-0.5 rounded bg-slate-100 border border-slate-200 text-slate-700">
                               {Math.round(h.duration_seconds)}s
                             </span>
                             <button
@@ -580,7 +579,7 @@ export default function ProjectStudioPage() {
                                 setEditStart(h.start_seconds);
                                 setEditEnd(h.end_seconds);
                               }}
-                              className="text-slate-400 hover:text-brand-300 font-sans text-xs inline-flex items-center gap-1 transition"
+                              className="text-slate-500 hover:text-brand-700 font-sans font-semibold text-xs inline-flex items-center gap-1 transition"
                             >
                               <Edit2 className="w-3 h-3" />
                               Trim
@@ -589,9 +588,10 @@ export default function ProjectStudioPage() {
                         )}
                       </div>
 
-                      <div className="text-[11px] text-slate-500 font-mono">1080×1920 Vertical</div>
+                      <div className="text-[11px] text-slate-400 font-mono">1080×1920 Vertical</div>
                     </div>
-                  </div>
+                    </SpotlightCard>
+                  </AnimatedContent>
                 );
               })}
             </div>
@@ -601,10 +601,11 @@ export default function ProjectStudioPage() {
 
       {/* ================= TAB 2: PIPELINE MONITOR ================= */}
       {activeTab === 'pipeline' && (
-        <div className="p-6 md:p-7 rounded-3xl studio-card space-y-6">
+        <AnimatedContent distance={14} duration={0.35}>
+          <SpotlightCard className="p-6 md:p-7 rounded-3xl studio-card space-y-6">
           <div>
-            <h2 className="text-base font-bold text-white">Pipeline Execution Monitor</h2>
-            <p className="text-xs text-slate-400 mt-1">
+            <h2 className="text-base font-bold text-slate-900">Pipeline Execution Monitor</h2>
+            <p className="text-xs text-slate-500 mt-1">
               Real-time processing across audio extraction, speech recognition, scene scoring, and 9:16 encoding.
             </p>
           </div>
@@ -631,13 +632,13 @@ export default function ProjectStudioPage() {
                   key={s.stage}
                   className={`p-3 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1.5 transition ${
                     isCompleted
-                      ? 'bg-emerald-500/15 border-emerald-500/35 text-emerald-300'
+                      ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
                       : isCurrent
-                      ? 'bg-brand-500/20 border-brand-400 text-white shadow-sm'
-                      : 'bg-black/25 border-white/[0.07] text-slate-500'
+                      ? 'bg-brand-50 border-brand-300 text-brand-700 shadow-sm'
+                      : 'bg-surface-elevated/80 border-surface-border text-slate-400'
                   }`}
                 >
-                  {isCompleted && <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" />}
+                  {isCompleted && <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />}
                   <span>{s.label}</span>
                 </div>
               );
@@ -645,32 +646,33 @@ export default function ProjectStudioPage() {
           </div>
 
           {activeJob ? (
-            <div className="p-5 rounded-2xl bg-black/30 border border-white/[0.07] space-y-3">
+            <div className="p-5 rounded-2xl bg-surface-elevated/80 border border-surface-border space-y-3">
               <ProgressBar
                 progress={activeJob.progress}
                 stage={activeJob.stage}
                 message={activeJob.message}
               />
-              <div className="flex justify-between items-center text-[11px] text-slate-500 font-mono pt-1">
+              <div className="flex justify-between items-center text-[11px] text-slate-400 font-mono pt-1">
                 <span>Job ID: {activeJob.id}</span>
                 <span>Attempts: {activeJob.attempt_count}</span>
               </div>
             </div>
           ) : (
-            <div className="p-5 rounded-2xl bg-black/30 border border-white/[0.07] text-xs text-slate-300 flex items-center justify-between">
+            <div className="p-5 rounded-2xl bg-surface-elevated/80 border border-surface-border text-xs text-slate-600 flex items-center justify-between">
               <span>
-                Current project state: <strong className="text-white uppercase">{project.status}</strong>
+                Current project state: <strong className="text-slate-900 uppercase">{project.status}</strong>
               </span>
               <button
                 onClick={handleStartAnalysis}
                 disabled={actionLoading}
-                className="px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-semibold text-xs shadow"
+                className="px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-semibold text-xs shadow-sm"
               >
                 Run Pipeline Job
               </button>
             </div>
           )}
-        </div>
+          </SpotlightCard>
+        </AnimatedContent>
       )}
 
       {/* ================= TAB 3: CLIP EDITOR & 9:16 MULTI-CLIPS ================= */}
@@ -678,15 +680,15 @@ export default function ProjectStudioPage() {
         <div className="space-y-5">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <h2 className="text-base font-bold text-white">Rendered 9:16 Multi-Clips</h2>
-              <p className="text-xs text-slate-400">
+              <h2 className="text-base font-bold text-slate-900">Rendered 9:16 Multi-Clips</h2>
+              <p className="text-xs text-slate-500">
                 1080×1920 vertical MP4 shorts with smart subject framing and burned-in subtitles.
               </p>
             </div>
             <button
               onClick={handleRenderClips}
               disabled={actionLoading || selectedCount === 0}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 disabled:opacity-45 text-white text-xs font-semibold shadow-md self-start sm:self-auto"
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-brand-600 to-orange-500 hover:from-brand-500 hover:to-orange-400 disabled:opacity-45 text-white text-xs font-semibold shadow-md shadow-brand-600/20 self-start sm:self-auto"
             >
               <Scissors className="w-3.5 h-3.5" />
               Re-Render Selected ({selectedCount})
@@ -695,10 +697,10 @@ export default function ProjectStudioPage() {
 
           {clips.length === 0 ? (
             <div className="p-12 text-center rounded-3xl studio-card space-y-3">
-              <Scissors className="w-9 h-9 text-emerald-400 mx-auto" />
+              <Scissors className="w-9 h-9 text-emerald-500 mx-auto" />
               <div>
-                <h3 className="font-bold text-white text-base">No vertical clips rendered yet</h3>
-                <p className="text-xs text-slate-400 max-w-sm mx-auto mt-1">
+                <h3 className="font-bold text-slate-900 text-base">No vertical clips rendered yet</h3>
+                <p className="text-xs text-slate-500 max-w-sm mx-auto mt-1">
                   Select candidate scenes in Best Scenes and click "Render Shorts (9:16)".
                 </p>
               </div>
@@ -710,14 +712,12 @@ export default function ProjectStudioPage() {
                 const srtUrl = api.getClipSubtitlesUrl(clip.id, 'srt');
 
                 return (
-                  <div
-                    key={clip.id}
-                    className="p-3.5 rounded-2xl studio-card studio-card-hover space-y-3 flex flex-col justify-between"
-                  >
+                  <AnimatedContent key={clip.id} delay={Math.min(i * 0.04, 0.35)} distance={16}>
+                    <SpotlightCard className="p-3.5 rounded-2xl studio-card studio-card-hover space-y-3 flex flex-col justify-between h-full">
                     {/* 9:16 Vertical Preview Card */}
                     <div
                       onClick={() => setSelectedClipForModal(clip)}
-                      className="relative w-full aspect-[9/16] bg-black rounded-xl overflow-hidden cursor-pointer group border border-white/[0.08] shadow-inner"
+                      className="relative w-full aspect-[9/16] bg-slate-950 rounded-xl overflow-hidden cursor-pointer group border border-slate-200 shadow-inner"
                     >
                       <video
                         src={downloadUrl}
@@ -725,17 +725,17 @@ export default function ProjectStudioPage() {
                         className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/15 to-transparent flex items-center justify-center">
-                        <div className="w-12 h-12 rounded-full bg-brand-600/90 text-white flex items-center justify-center shadow-xl ring-2 ring-white/25 group-hover:scale-110 transition">
+                        <div className="w-12 h-12 rounded-full bg-brand-600/95 text-white flex items-center justify-center shadow-xl ring-2 ring-white/40 group-hover:scale-110 transition">
                           <Play className="w-5 h-5 ml-0.5" />
                         </div>
                       </div>
                       <div className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-md bg-black/75 backdrop-blur-sm border border-white/10 text-[10px] font-mono font-bold text-white">
                         #{i + 1}
                       </div>
-                      <div className="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-md bg-brand-500/20 backdrop-blur-sm border border-brand-400/30 text-[10px] font-semibold uppercase text-brand-200">
+                      <div className="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-md bg-brand-600/90 backdrop-blur-sm text-[10px] font-semibold uppercase text-white">
                         {clip.subtitle_language || 'Auto'}
                       </div>
-                      <div className="absolute bottom-2.5 left-2.5 right-2.5 flex items-center justify-between text-[10px] font-mono text-slate-200">
+                      <div className="absolute bottom-2.5 left-2.5 right-2.5 flex items-center justify-between text-[10px] font-mono text-slate-100">
                         <span className="px-2 py-0.5 rounded-md bg-black/75 backdrop-blur-sm border border-white/10">
                           {clip.width}×{clip.height}
                         </span>
@@ -746,26 +746,26 @@ export default function ProjectStudioPage() {
                     </div>
 
                     <div className="space-y-0.5 px-0.5">
-                      <div className="font-semibold text-white text-xs truncate">
+                      <div className="font-bold text-slate-900 text-xs truncate">
                         Short #{i + 1} ({clip.id.slice(0, 6)})
                       </div>
-                      <div className="text-[11px] font-mono text-slate-400">
+                      <div className="text-[11px] font-mono text-slate-500">
                         9:16 MP4 • {clip.fps} FPS
                       </div>
                     </div>
 
-                    <div className="pt-2 border-t border-white/[0.06] grid grid-cols-3 gap-1.5">
+                    <div className="pt-2 border-t border-surface-border/70 grid grid-cols-3 gap-1.5">
                       <button
                         onClick={() => setSelectedClipForModal(clip)}
-                        className="py-2 px-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-slate-200 text-[11px] font-semibold flex items-center justify-center gap-1 transition"
+                        className="py-2 px-2 rounded-xl bg-surface-elevated/80 hover:bg-surface-elevated border border-surface-border text-slate-700 text-[11px] font-semibold flex items-center justify-center gap-1 transition"
                       >
-                        <Eye className="w-3.5 h-3.5 text-brand-400" />
+                        <Eye className="w-3.5 h-3.5 text-brand-600" />
                         Play
                       </button>
                       <a
                         href={downloadUrl}
                         download={`short_${i + 1}_${clip.id.slice(0, 6)}.mp4`}
-                        className="py-2 px-2 rounded-xl bg-brand-600 hover:bg-brand-500 text-white text-[11px] font-semibold flex items-center justify-center gap-1 shadow transition"
+                        className="py-2 px-2 rounded-xl bg-brand-600 hover:bg-brand-500 text-white text-[11px] font-semibold flex items-center justify-center gap-1 shadow-sm transition"
                       >
                         <Download className="w-3.5 h-3.5" />
                         MP4
@@ -773,13 +773,14 @@ export default function ProjectStudioPage() {
                       <a
                         href={srtUrl}
                         download={`subtitles_${clip.id}.srt`}
-                        className="py-2 px-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-slate-200 text-[11px] font-semibold flex items-center justify-center gap-1 transition"
+                        className="py-2 px-2 rounded-xl bg-surface-elevated/80 hover:bg-surface-elevated border border-surface-border text-slate-700 text-[11px] font-semibold flex items-center justify-center gap-1 transition"
                       >
-                        <FileText className="w-3.5 h-3.5 text-cyan-400" />
+                        <FileText className="w-3.5 h-3.5 text-orange-600" />
                         SRT
                       </a>
                     </div>
-                  </div>
+                    </SpotlightCard>
+                  </AnimatedContent>
                 );
               })}
             </div>
@@ -791,11 +792,11 @@ export default function ProjectStudioPage() {
       {activeTab === 'voice' && (
         <div className="p-6 md:p-7 rounded-3xl studio-card space-y-6">
           <div>
-            <h2 className="text-base font-bold text-white flex items-center gap-2">
-              <Mic className="w-4 h-4 text-indigo-400" />
+            <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
+              <Mic className="w-4 h-4 text-brand-600" />
               Hindi Voice-over Narration Studio
             </h2>
-            <p className="text-xs text-slate-400 mt-1">
+            <p className="text-xs text-slate-500 mt-1">
               Synthesize expressive Hindi narration aligned with your rendered clips without changing source facts.
             </p>
           </div>
@@ -809,19 +810,19 @@ export default function ProjectStudioPage() {
               { name: 'Emotional', desc: 'Reflective and heartfelt expression' },
               { name: 'Funny', desc: 'Upbeat, lighthearted timing' },
             ].map((style) => (
-              <div
+              <SpotlightCard
                 key={style.name}
-                className="p-4 rounded-2xl bg-black/25 border border-white/[0.07] space-y-1"
+                className="p-4 rounded-2xl bg-surface-elevated/75 border border-surface-border space-y-1 studio-card-hover"
               >
-                <div className="font-bold text-white">{style.name}</div>
-                <div className="text-[11px] text-slate-400">{style.desc}</div>
-              </div>
+                <div className="font-bold text-slate-900">{style.name}</div>
+                <div className="text-[11px] text-slate-500">{style.desc}</div>
+              </SpotlightCard>
             ))}
           </div>
 
           {clips.length > 0 && (
-            <div className="space-y-3 pt-4 border-t border-white/[0.07]">
-              <h3 className="text-[11px] font-bold text-slate-300 uppercase tracking-wider">
+            <div className="space-y-3 pt-4 border-t border-slate-100">
+              <h3 className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
                 Generate Hindi Narration for Rendered Clips
               </h3>
               <div className="flex flex-wrap gap-2.5">
@@ -830,9 +831,9 @@ export default function ProjectStudioPage() {
                     key={clip.id}
                     onClick={() => handleVoiceOverRequest(clip.id)}
                     disabled={actionLoading}
-                    className="px-4 py-2.5 rounded-xl bg-indigo-500/15 hover:bg-indigo-500/25 border border-indigo-500/30 text-indigo-200 text-xs font-semibold flex items-center gap-2 transition"
+                    className="px-4 py-2.5 rounded-xl bg-brand-50 hover:bg-brand-100 border border-brand-200 text-brand-700 text-xs font-semibold flex items-center gap-2 transition"
                   >
-                    <Mic className="w-3.5 h-3.5 text-indigo-400" />
+                    <Mic className="w-3.5 h-3.5 text-brand-600" />
                     Synthesize Short #{i + 1} ({Math.round(clip.duration_seconds)}s)
                   </button>
                 ))}
@@ -846,17 +847,17 @@ export default function ProjectStudioPage() {
       {activeTab === 'export' && (
         <div className="p-6 md:p-7 rounded-3xl studio-card space-y-6">
           <div>
-            <h2 className="text-base font-bold text-white flex items-center gap-2">
-              <Download className="w-4 h-4 text-emerald-400" />
+            <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
+              <Download className="w-4 h-4 text-emerald-600" />
               Export & Download Center
             </h2>
-            <p className="text-xs text-slate-400 mt-1">
+            <p className="text-xs text-slate-500 mt-1">
               Download production-ready 1080×1920 vertical MP4 files and subtitle sidecars (.SRT / .VTT).
             </p>
           </div>
 
           {clips.length === 0 ? (
-            <div className="p-10 text-center text-xs text-slate-400 bg-black/20 rounded-2xl border border-white/[0.06]">
+            <div className="p-10 text-center text-xs text-slate-500 bg-surface-elevated/80 rounded-2xl border border-surface-border">
               No clips exported yet. Render your selected moments in the 9:16 Multi-Clips tab.
             </div>
           ) : (
@@ -867,15 +868,15 @@ export default function ProjectStudioPage() {
                 const vttUrl = api.getClipSubtitlesUrl(clip.id, 'vtt');
 
                 return (
-                  <div
+                  <SpotlightCard
                     key={clip.id}
-                    className="p-4 rounded-2xl bg-black/25 border border-white/[0.07] flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs"
+                    className="p-4 rounded-2xl bg-surface-elevated/80 border border-surface-border flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs studio-card-hover"
                   >
                     <div className="space-y-1">
-                      <div className="font-bold text-white">
+                      <div className="font-bold text-slate-900">
                         Short #{i + 1} — {Math.round(clip.duration_seconds)}s ({clip.id.slice(0, 8)})
                       </div>
-                      <div className="text-slate-400 font-mono text-[11px]">
+                      <div className="text-slate-500 font-mono text-[11px]">
                         {clip.width}×{clip.height} • {clip.fps} FPS • H.264 MP4 + AAC Audio
                       </div>
                     </div>
@@ -884,7 +885,7 @@ export default function ProjectStudioPage() {
                       <a
                         href={downloadUrl}
                         download={`short_${i + 1}_${clip.id.slice(0, 6)}.mp4`}
-                        className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 text-white font-semibold shadow flex items-center gap-1.5"
+                        className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-brand-600 to-orange-500 hover:from-brand-500 hover:to-orange-400 text-white font-semibold shadow-sm flex items-center gap-1.5"
                       >
                         <Download className="w-3.5 h-3.5" />
                         MP4 Video
@@ -892,21 +893,21 @@ export default function ProjectStudioPage() {
                       <a
                         href={srtUrl}
                         download={`subtitles_${clip.id}.srt`}
-                        className="px-3 py-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-slate-200 font-medium flex items-center gap-1.5"
+                        className="px-3 py-2 rounded-xl bg-surface-card hover:bg-surface-elevated border border-surface-border text-slate-700 font-semibold flex items-center gap-1.5 shadow-sm"
                       >
-                        <FileText className="w-3.5 h-3.5 text-brand-400" />
+                        <FileText className="w-3.5 h-3.5 text-brand-600" />
                         .SRT
                       </a>
                       <a
                         href={vttUrl}
                         download={`subtitles_${clip.id}.vtt`}
-                        className="px-3 py-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-slate-200 font-medium flex items-center gap-1.5"
+                        className="px-3 py-2 rounded-xl bg-surface-card hover:bg-surface-elevated border border-surface-border text-slate-700 font-semibold flex items-center gap-1.5 shadow-sm"
                       >
-                        <Captions className="w-3.5 h-3.5 text-cyan-400" />
+                        <Captions className="w-3.5 h-3.5 text-orange-600" />
                         .VTT
                       </a>
                     </div>
-                  </div>
+                  </SpotlightCard>
                 );
               })}
             </div>

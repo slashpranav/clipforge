@@ -3,44 +3,44 @@
 @tailwind utilities;
 
 :root {
-  --background: #090b10;
-  --foreground: #f1f5f9;
+  --background: #efecee;
+  --foreground: #111827;
 }
 
 body {
   background-color: var(--background);
   background-image:
-    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(124, 58, 237, 0.14), transparent),
-    radial-gradient(ellipse 60% 40% at 100% 0%, rgba(56, 189, 248, 0.06), transparent);
+    radial-gradient(ellipse 75% 45% at 50% -15%, rgba(225, 29, 72, 0.075), transparent),
+    radial-gradient(ellipse 50% 35% at 95% 5%, rgba(249, 115, 22, 0.06), transparent);
   background-attachment: fixed;
   color: var(--foreground);
   overflow-x: hidden;
 }
 
-/* Custom subtle scrollbars */
+/* Custom warm off-white scrollbars */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #090b10;
+  background: #e9e4e7;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #23293a;
+  background: #c8bec4;
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #36405a;
+  background: #9f949b;
 }
 
-/* Studio card & glass helpers */
+/* Warm off-white studio cards & glass helpers */
 .studio-card {
-  background: linear-gradient(180deg, rgba(20, 24, 37, 0.92) 0%, rgba(15, 18, 29, 0.96) 100%);
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  box-shadow: 0 8px 30px -12px rgba(0, 0, 0, 0.65);
+  background: #f7f5f6;
+  border: 1px solid #dfd8dd;
+  box-shadow: 0 4px 20px -6px rgba(15, 23, 42, 0.07);
 }
 
 .studio-card-hover {
@@ -48,15 +48,22 @@ body {
 }
 
 .studio-card-hover:hover {
-  border-color: rgba(139, 92, 246, 0.35);
-  box-shadow: 0 12px 35px -10px rgba(124, 58, 237, 0.16);
+  background: #f9f7f8;
+  border-color: rgba(225, 29, 72, 0.35);
+  box-shadow: 0 12px 28px -10px rgba(225, 29, 72, 0.14);
   transform: translateY(-1px);
 }
 
+.hero-lavender {
+  background: linear-gradient(135deg, #f9eef1 0%, #f7ece8 52%, #f5f2f4 100%);
+  border: 1px solid #ead8df;
+  box-shadow: 0 10px 32px -12px rgba(225, 29, 72, 0.14);
+}
+
 .glass-panel {
-  background: rgba(15, 18, 28, 0.78);
+  background: rgba(247, 245, 246, 0.95);
   backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid #dfd8dd;
 }
 
 @keyframes shimmer {
@@ -70,4 +77,47 @@ body {
 
 .animate-shimmer {
   animation: shimmer 2s infinite;
+}
+
+@keyframes shine {
+  0% {
+    background-position: 110% 0;
+  }
+  100% {
+    background-position: -110% 0;
+  }
+}
+
+.animate-shine {
+  animation: shine 4s linear infinite;
+}
+
+@keyframes star-movement-bottom {
+  0% {
+    transform: translate(0%, 0%);
+    opacity: 0.9;
+  }
+  100% {
+    transform: translate(-100%, 0%);
+    opacity: 0;
+  }
+}
+
+@keyframes star-movement-top {
+  0% {
+    transform: translate(0%, 0%);
+    opacity: 0.9;
+  }
+  100% {
+    transform: translate(100%, 0%);
+    opacity: 0;
+  }
+}
+
+.animate-star-movement-bottom {
+  animation: star-movement-bottom linear infinite alternate;
+}
+
+.animate-star-movement-top {
+  animation: star-movement-top linear infinite alternate;
 }
